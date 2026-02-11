@@ -1073,8 +1073,76 @@ if (typeof window !== 'undefined') {
 
 </head>
 <body>
-<div id="app"><div class="loading"><div class="spinner"></div><div style="color:var(--text-muted)">載入中...</div></div></div>
+<div id="app">
+  <div class="loading">
+    <div style="text-align:center">
+      <div class="logo-icon" style="width:80px;height:80px;border-radius:20px;background:linear-gradient(135deg,var(--hermes),var(--hermes-dark));display:inline-flex;align-items:center;justify-content:center;margin-bottom:24px;box-shadow:0 8px 32px rgba(243,112,33,0.4)">
+        <svg viewBox="0 0 24 24" fill="white" style="width:48px;height:48px"><path d="M19.5 4C18.8 3.3 17.7 3 16.8 3.2L15.5 3.5C14.8 3 13.8 2.8 13 3.2L11.5 4C10.3 4.6 9.5 5.8 9.2 7.2L8.5 10C7.8 10.5 7.2 11.2 7 12L6 15C5.8 15.8 5.8 16.5 6 17.2L5 20V21H8L9 18.5L10.5 19.5V21H13.5V19L15 17.5C16 16.5 16.8 15.2 17 13.8L17.2 12C17.5 11 17.5 10 17 9L17.5 7.5C18 6.5 18 5.5 17.5 4.5L19.5 4ZM14 7.5C14.6 7.5 15 7.9 15 8.5C15 9.1 14.6 9.5 14 9.5C13.4 9.5 13 9.1 13 8.5C13 7.9 13.4 7.5 14 7.5Z"/></svg>
+      </div>
+      <div style="font-size:28px;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,var(--hermes),var(--hermes-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent">AI Job Agent</div>
+      <div style="color:var(--text-muted);font-size:14px;margin-bottom:32px">v4.1.0 Professor Edition</div>
+
+      <!-- 真實載入進度條 -->
+      <div style="width:280px;margin:0 auto 16px;background:var(--bg-elevated);border-radius:12px;height:8px;overflow:hidden;box-shadow:inset 0 2px 8px rgba(0,0,0,0.3)">
+        <div id="loadProgress" style="width:0%;height:100%;background:linear-gradient(90deg,var(--hermes),var(--hermes-light));transition:width 0.3s ease;border-radius:12px;box-shadow:0 0 12px rgba(243,112,33,0.6)"></div>
+      </div>
+      <div id="loadPercent" style="color:var(--text-secondary);font-size:13px;font-weight:600">0%</div>
+      <div id="loadStatus" style="color:var(--text-muted);font-size:12px;margin-top:8px">正在載入資源...</div>
+    </div>
+  </div>
+</div>
 <script>
+// ═══════════════════════════════════════
+//  真實載入進度追蹤（v4.1.0 UX 改進）
+// ═══════════════════════════════════════
+(function() {
+  let progress = 0;
+  const progressBar = document.getElementById('loadProgress');
+  const percentText = document.getElementById('loadPercent');
+  const statusText = document.getElementById('loadStatus');
+
+  function updateProgress(newProgress, status) {
+    progress = Math.min(newProgress, 100);
+    if (progressBar) progressBar.style.width = progress + '%';
+    if (percentText) percentText.textContent = Math.floor(progress) + '%';
+    if (status && statusText) statusText.textContent = status;
+  }
+
+  // 初始載入階段
+  updateProgress(10, '載入核心資源...');
+
+  // DOM 載入完成
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      updateProgress(40, '初始化應用程式...');
+    });
+  } else {
+    updateProgress(40, '初始化應用程式...');
+  }
+
+  // 追蹤資源載入（圖片、字體、腳本）
+  if ('PerformanceObserver' in window) {
+    try {
+      const observer = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        const loaded = entries.length;
+        updateProgress(40 + loaded * 2, '載入資源中...');
+      });
+      observer.observe({ entryTypes: ['resource'] });
+    } catch(e) {
+      // PerformanceObserver 不支援時靜默失敗
+    }
+  }
+
+  // window.onload 完成（所有資源載入完畢）
+  window.addEventListener('load', () => {
+    updateProgress(90, '準備就緒...');
+    setTimeout(() => {
+      updateProgress(100, '完成！');
+    }, 200);
+  });
+})();
+
 // ═══════════════════════════════════════
 //  AI Job Agent v3.0 — Hermès Edition
 // ═══════════════════════════════════════
@@ -1795,8 +1863,9 @@ document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){var so=document.getElementById('settingsOverlay');if(so&&so.classList.contains('active')){closeSettings();e.stopPropagation();return;}closeModal();}
 });
 
-// Init
-if(TOKEN){renderDashboard();}else{renderLogin();}
+// Init - v4.1.0 Professor Edition（純前端，無需登入）
+TOKEN = 'frontend-mode'; // 前端模式標記
+renderDashboard();
 
 // ═══════════════════════════════════════
 //  Phase 3.2: 主題系統
