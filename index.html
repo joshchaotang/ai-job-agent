@@ -4,16 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>AI Job Agent</title>
-  <meta name="version" content="v3.1.0 Atlas Edition">
+  <meta name="version" content="v3.9.0 Olympus Edition">
   <meta name="description" content="AI 求職助手 - 履歷智能匹配 + 面試準備">
 
   <style>
+    /* ═══════════════════════════════════════
+       v3.9.0 Olympus Edition - 雙主題系統
+       ═══════════════════════════════════════ */
+
     :root {
+      /* 品牌色（不變） */
       --hermes: #F37021;
       --hermes-dark: #D4601C;
       --hermes-light: #FF8F50;
       --hermes-glow: rgba(243,112,33,0.12);
       --hermes-subtle: rgba(243,112,33,0.06);
+
+      /* 深色模式（預設） */
       --bg-primary: #0D1117;
       --bg-card: #161B22;
       --bg-card-hover: #1C2333;
@@ -29,9 +36,47 @@
       --accent-purple: #BC8CFF;
       --accent-gold: #D29922;
       --border: #30363D;
-      --radius: 12px;
-      --radius-sm: 8px;
+
+      /* Glassmorphism */
+      --glass-bg: rgba(22,27,34,0.6);
+      --glass-border: rgba(255,255,255,0.08);
+      --glass-shadow: 0 8px 32px 0 rgba(0,0,0,0.37);
+      --blur: blur(12px);
+
+      /* 通用 */
+      --radius: 16px;
+      --radius-sm: 10px;
+      --radius-xs: 6px;
       --shadow: 0 8px 32px rgba(0,0,0,0.4);
+      --shadow-sm: 0 4px 16px rgba(0,0,0,0.2);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* 淺色模式 */
+    [data-theme="light"] {
+      --bg-primary: #FFFFFF;
+      --bg-card: #F6F8FA;
+      --bg-card-hover: #EFF1F3;
+      --bg-elevated: #FFFFFF;
+      --bg-input: #F6F8FA;
+      --text-primary: #1F2328;
+      --text-secondary: #57606A;
+      --text-muted: #656D76;
+      --text-dim: #8C959F;
+      --accent-green: #1F883D;
+      --accent-red: #CF222E;
+      --accent-blue: #0969DA;
+      --accent-purple: #8250DF;
+      --accent-gold: #BF8700;
+      --border: #D0D7DE;
+
+      /* Glassmorphism (淺色) */
+      --glass-bg: rgba(255,255,255,0.7);
+      --glass-border: rgba(0,0,0,0.1);
+      --glass-shadow: 0 8px 32px 0 rgba(0,0,0,0.1);
+
+      --shadow: 0 8px 24px rgba(0,0,0,0.08);
+      --shadow-sm: 0 4px 12px rgba(0,0,0,0.04);
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -124,12 +169,38 @@
       display:grid; grid-template-columns:repeat(auto-fill,minmax(380px,1fr)); gap:14px;
     }
 
-    .job-card {
-      background:var(--bg-card); border-radius:var(--radius);
-      border:1px solid var(--border); overflow:hidden;
-      transition:all 0.25s ease; cursor:pointer; position:relative;
+    /* Phase 3.2: Bento Grid 佈局（Apple風格）*/
+    .job-grid--bento {
+      grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+      gap:16px;
     }
-    .job-card:hover { transform:translateY(-3px); border-color:var(--hermes); box-shadow:0 8px 24px rgba(243,112,33,0.1); }
+
+    .job-card--featured {
+      grid-column:span 2;
+      grid-row:span 2;
+    }
+
+    @media (max-width:768px) {
+      .job-card--featured { grid-column:span 1; grid-row:span 1; }
+    }
+
+    .job-card {
+      background:var(--glass-bg);
+      backdrop-filter:var(--blur);
+      -webkit-backdrop-filter:var(--blur);
+      border-radius:var(--radius);
+      border:1px solid var(--glass-border);
+      overflow:hidden;
+      transition:var(--transition);
+      cursor:pointer;
+      position:relative;
+      box-shadow:var(--shadow-sm);
+    }
+    .job-card:hover {
+      transform:translateY(-4px) scale(1.01);
+      border-color:var(--hermes);
+      box-shadow:0 12px 40px rgba(243,112,33,0.15);
+    }
     .card-accent { height:3px; }
     .card-body { padding:18px; }
     .card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
@@ -303,6 +374,20 @@
     }
     .settings-gear:hover { color:var(--hermes); border-color:var(--hermes); transform:rotate(30deg); }
     .settings-gear.configured { border-color:var(--accent-green); color:var(--accent-green); }
+
+    /* Phase 3.2: 主題切換按鈕 */
+    .theme-toggle {
+      width:36px; height:36px; border-radius:50%;
+      border:1px solid var(--border); background:var(--bg-card);
+      cursor:pointer; font-size:18px;
+      display:flex; align-items:center; justify-content:center;
+      transition:var(--transition);
+    }
+    .theme-toggle:hover {
+      border-color:var(--hermes); transform:scale(1.1);
+      box-shadow:0 0 20px var(--hermes-glow);
+    }
+    .theme-toggle:active { transform:scale(0.95); }
 
     .empty-state { text-align:center; padding:80px 32px; color:var(--text-muted); }
     .empty-icon { font-size:48px; margin-bottom:16px; }
@@ -516,6 +601,12 @@
     .btn-secondary:hover { background:var(--bg-card-hover); }
 
   </style>
+
+  <!-- jsPDF for Resume Generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Chart.js for Analytics Dashboard (Phase 3.5) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 <div id="app"><div class="loading"><div class="spinner"></div><div style="color:var(--text-muted)">載入中...</div></div></div>
@@ -633,6 +724,7 @@ function renderDashboard() {
       '</div>' +
       '<div class="header-actions">' +
         '<span class="header-badge">' + escHtml(model) + '</span>' +
+        '<button class="theme-toggle" onclick="toggleTheme()" title="切換主題" id="themeToggle"><span id="themeIcon">🌙</span></button>' +
         '<button class="filter-btn" onclick="logout()" style="font-size:12px;padding:5px 12px">登出</button>' +
         '<button class="settings-gear ' + (getConfigStatus().apiKey?'configured':'') + '" onclick="openSettings()" title="設定">&#9881;</button>' +
       '</div>' +
@@ -695,7 +787,10 @@ function renderDashboard() {
           '<div class="resume-info-card">' +
             '<div class="resume-header">' +
               '<h3>📋 履歷解析結果</h3>' +
-              '<button class="btn-clear" onclick="clearResume()">重新上傳</button>' +
+              '<div style="display:flex;gap:10px">' +
+                '<button class="btn-primary" onclick="openResumeGenerator()" style="padding:8px 16px;font-size:14px">📄 生成客製化履歷</button>' +
+                '<button class="btn-clear" onclick="clearResume()">重新上傳</button>' +
+              '</div>' +
             '</div>' +
             '<div class="resume-visual" id="resumeVisual"></div>' +
           '</div>' +
@@ -1013,7 +1108,8 @@ function renderAnalyzedCard(j,idx) {
   var matchedTags=(j.matched_skills||[]).slice(0,4).map(function(s){return '<span class="tag tag-match">&#10003; '+escHtml(s)+'</span>';}).join('');
   var missingTags=(j.missing_skills||[]).slice(0,2).map(function(s){return '<span class="tag tag-miss">&#10007; '+escHtml(s)+'</span>';}).join('');
   var statusBadge=renderStatusBadge(getJobKey(j));
-  return '<div class="job-card" onclick="openModal('+idx+')">' +
+  var featuredClass = (sc.total >= 85) ? ' job-card--featured' : '';
+  return '<div class="job-card'+featuredClass+'" onclick="openModal('+idx+')">' +
     renderCardActions(j,idx) +
     '<div class="card-accent" style="background:linear-gradient(90deg,'+j.score_color+',transparent)"></div>' +
     '<div class="card-body">' +
@@ -1237,6 +1333,42 @@ document.addEventListener('keydown',function(e){
 
 // Init
 if(TOKEN){renderDashboard();}else{renderLogin();}
+
+// ═══════════════════════════════════════
+//  Phase 3.2: 主題系統
+// ═══════════════════════════════════════
+
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeIcon(savedTheme);
+}
+
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+  updateThemeIcon(newTheme);
+
+  // 動畫效果
+  const toggle = document.getElementById('themeToggle');
+  if (toggle) {
+    toggle.style.transform = 'rotate(360deg)';
+    setTimeout(() => { toggle.style.transform = ''; }, 300);
+  }
+}
+
+function updateThemeIcon(theme) {
+  const icon = document.getElementById('themeIcon');
+  if (icon) {
+    icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+  }
+}
+
+// 初始化主題
+initTheme();
 
 
 // ===== 履歷功能 JavaScript =====
@@ -1563,6 +1695,343 @@ if (!document.querySelector('style[data-resume-animations]')) {
   style.setAttribute('data-resume-animations', 'true');
   style.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
   document.head.appendChild(style);
+}
+
+// ═══════════════════════════════════════
+//  Phase 3.1: 客製化履歷生成器（jsPDF）
+// ═══════════════════════════════════════
+
+function openResumeGenerator() {
+  if (!userResume) {
+    alert('❌ 請先上傳履歷');
+    return;
+  }
+
+  const jobs = matchedJobsCache.filter(j => j.match_score >= 60);
+  if (jobs.length === 0) {
+    alert('❌ 沒有找到足夠匹配的職位（最低 60%）。請先搜尋職位並匹配。');
+    return;
+  }
+
+  const html = `
+    <div style="max-width:600px;padding:30px">
+      <h2 style="color:var(--hermes);margin-bottom:20px">📄 生成客製化履歷</h2>
+
+      <div style="margin-bottom:24px">
+        <label style="display:block;margin-bottom:8px;color:var(--text-primary);font-weight:500">選擇目標職位</label>
+        <select id="targetJobSelect" style="width:100%;padding:12px;background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;font-size:14px">
+          ${jobs.slice(0, 10).map((job, i) => `
+            <option value="${i}">${job.title} @ ${job.company} (${job.match_score}% 匹配)</option>
+          `).join('')}
+        </select>
+      </div>
+
+      <div style="margin-bottom:24px">
+        <label style="display:block;margin-bottom:8px;color:var(--text-primary);font-weight:500">選擇履歷模板</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <label style="display:flex;align-items:center;padding:16px;background:var(--bg-card);border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--hermes)'" onmouseout="this.style.borderColor='var(--border)'">
+            <input type="radio" name="templateType" value="professional" checked style="margin-right:12px">
+            <div>
+              <div style="font-weight:600;color:var(--text-primary)">專業模板</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px">簡潔商務風格</div>
+            </div>
+          </label>
+          <label style="display:flex;align-items:center;padding:16px;background:var(--bg-card);border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--hermes)'" onmouseout="this.style.borderColor='var(--border)'">
+            <input type="radio" name="templateType" value="modern" style="margin-right:12px">
+            <div>
+              <div style="font-weight:600;color:var(--text-primary)">現代模板</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:4px">愛馬仕橘色點綴</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div style="background:var(--hermes-subtle);padding:16px;border-radius:8px;margin-bottom:24px;border-left:3px solid var(--hermes)">
+        <div style="font-size:13px;color:var(--text-primary);line-height:1.6">
+          <strong>✨ 智能優化：</strong>
+          <ul style="margin:8px 0 0 20px;padding:0">
+            <li>根據職位需求調整技能順序</li>
+            <li>強調匹配的關鍵經驗</li>
+            <li>突出相關技能與資歷</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;justify-content:flex-end">
+        <button class="btn-secondary" onclick="closeModal()" style="padding:12px 24px">取消</button>
+        <button class="btn-primary" onclick="generateCustomResume()" style="padding:12px 24px">🎯 生成履歷 PDF</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function generateCustomResume() {
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) {
+    alert('❌ PDF 生成工具載入失敗，請重新整理頁面');
+    return;
+  }
+
+  const jobIndex = parseInt(document.getElementById('targetJobSelect').value);
+  const templateType = document.querySelector('input[name="templateType"]:checked').value;
+  const targetJob = matchedJobsCache.filter(j => j.match_score >= 60)[jobIndex];
+
+  closeModal();
+  showLoadingOverlay('正在生成客製化履歷...');
+
+  setTimeout(() => {
+    try {
+      const doc = new jsPDF();
+
+      if (templateType === 'professional') {
+        generateProfessionalTemplate(doc, userResume, targetJob);
+      } else {
+        generateModernTemplate(doc, userResume, targetJob);
+      }
+
+      const filename = `Resume_${targetJob.company.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.pdf`;
+      doc.save(filename);
+
+      hideLoadingOverlay();
+      showToast('✅ 履歷 PDF 已生成並下載');
+    } catch (error) {
+      hideLoadingOverlay();
+      alert('❌ 生成失敗：' + error.message);
+      console.error('PDF generation error:', error);
+    }
+  }, 500);
+}
+
+// 專業模板
+function generateProfessionalTemplate(doc, resume, job) {
+  const primaryColor = [20, 20, 20];  // 深灰
+  const accentColor = [243, 112, 33]; // 愛馬仕橘
+  let y = 20;
+
+  // 標題
+  doc.setFontSize(24);
+  doc.setTextColor(...primaryColor);
+  doc.text('RESUME', 105, y, { align: 'center' });
+  y += 10;
+
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Tailored for: ${job.title} @ ${job.company}`, 105, y, { align: 'center' });
+  y += 15;
+
+  // 分隔線
+  doc.setDrawColor(...accentColor);
+  doc.setLineWidth(0.5);
+  doc.line(20, y, 190, y);
+  y += 10;
+
+  // 技能區（根據匹配度排序）
+  doc.setFontSize(14);
+  doc.setTextColor(...accentColor);
+  doc.text('SKILLS', 20, y);
+  y += 8;
+
+  const matchedSkills = job.matched_skills || [];
+  const otherSkills = resume.skills.filter(s => !matchedSkills.includes(s));
+  const orderedSkills = [...matchedSkills, ...otherSkills];
+
+  doc.setFontSize(10);
+  doc.setTextColor(...primaryColor);
+  const skillsText = orderedSkills.slice(0, 12).join(' • ');
+  const skillsLines = doc.splitTextToSize(skillsText, 170);
+  doc.text(skillsLines, 20, y);
+  y += skillsLines.length * 5 + 10;
+
+  // 工作經驗
+  if (resume.experience && resume.experience.length > 0) {
+    doc.setFontSize(14);
+    doc.setTextColor(...accentColor);
+    doc.text('EXPERIENCE', 20, y);
+    y += 8;
+
+    resume.experience.forEach((exp, i) => {
+      if (y > 260) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.setFontSize(11);
+      doc.setTextColor(...primaryColor);
+      doc.text(exp.title || 'Position', 20, y);
+
+      doc.setFontSize(10);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`${exp.company || 'Company'} | ${exp.years || 0} years`, 20, y + 5);
+      y += 12;
+
+      if (exp.description) {
+        doc.setFontSize(9);
+        doc.setTextColor(60, 60, 60);
+        const descLines = doc.splitTextToSize(exp.description, 170);
+        doc.text(descLines, 20, y);
+        y += descLines.length * 4 + 8;
+      }
+    });
+  }
+
+  // 教育背景
+  if (resume.education) {
+    if (y > 250) {
+      doc.addPage();
+      y = 20;
+    }
+
+    doc.setFontSize(14);
+    doc.setTextColor(...accentColor);
+    doc.text('EDUCATION', 20, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.setTextColor(...primaryColor);
+    const eduLines = doc.splitTextToSize(resume.education, 170);
+    doc.text(eduLines, 20, y);
+    y += eduLines.length * 5 + 10;
+  }
+
+  // 頁尾
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Generated by AI Job Agent | Match Score: ${job.match_score}%`, 105, 285, { align: 'center' });
+  }
+}
+
+// 現代模板（愛馬仕橘色主題）
+function generateModernTemplate(doc, resume, job) {
+  const hermes = [243, 112, 33];
+  const darkGray = [30, 30, 30];
+  const lightGray = [120, 120, 120];
+  let y = 25;
+
+  // 側邊欄背景
+  doc.setFillColor(...hermes);
+  doc.rect(0, 0, 60, 297, 'F');
+
+  // 主標題（白色）
+  doc.setFontSize(20);
+  doc.setTextColor(255, 255, 255);
+  doc.text('YOUR', 10, 30);
+  doc.text('RESUME', 10, 38);
+
+  // 目標職位（側邊欄）
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  const targetLines = doc.splitTextToSize(`Target: ${job.title}`, 45);
+  doc.text(targetLines, 10, 50);
+  y = 50 + targetLines.length * 4 + 10;
+
+  // 匹配分數徽章
+  doc.setFontSize(16);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`${job.match_score}%`, 20, y);
+  doc.setFontSize(8);
+  doc.text('MATCH', 20, y + 5);
+  y += 20;
+
+  // 技能（側邊欄）
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.text('SKILLS', 10, y);
+  y += 7;
+
+  const matchedSkills = job.matched_skills || [];
+  doc.setFontSize(8);
+  matchedSkills.slice(0, 8).forEach(skill => {
+    const skillLines = doc.splitTextToSize(`• ${skill}`, 45);
+    doc.text(skillLines, 10, y);
+    y += skillLines.length * 4 + 2;
+  });
+
+  // 主內容區
+  let mainY = 25;
+
+  // 個人摘要
+  if (resume.summary) {
+    doc.setFontSize(14);
+    doc.setTextColor(...hermes);
+    doc.text('PROFESSIONAL SUMMARY', 70, mainY);
+    mainY += 8;
+
+    doc.setFontSize(10);
+    doc.setTextColor(...darkGray);
+    const summaryLines = doc.splitTextToSize(resume.summary, 125);
+    doc.text(summaryLines, 70, mainY);
+    mainY += summaryLines.length * 5 + 12;
+  }
+
+  // 工作經驗
+  if (resume.experience && resume.experience.length > 0) {
+    doc.setFontSize(14);
+    doc.setTextColor(...hermes);
+    doc.text('EXPERIENCE', 70, mainY);
+    mainY += 8;
+
+    resume.experience.forEach((exp, i) => {
+      if (mainY > 260) {
+        doc.addPage();
+        doc.setFillColor(...hermes);
+        doc.rect(0, 0, 60, 297, 'F');
+        mainY = 20;
+      }
+
+      doc.setFontSize(12);
+      doc.setTextColor(...darkGray);
+      doc.text(exp.title || 'Position', 70, mainY);
+
+      doc.setFontSize(9);
+      doc.setTextColor(...lightGray);
+      doc.text(`${exp.company || 'Company'}`, 70, mainY + 5);
+      doc.text(`${exp.years || 0} years`, 160, mainY + 5);
+      mainY += 12;
+
+      if (exp.description) {
+        doc.setFontSize(9);
+        doc.setTextColor(60, 60, 60);
+        const descLines = doc.splitTextToSize(exp.description, 125);
+        doc.text(descLines, 70, mainY);
+        mainY += descLines.length * 4 + 10;
+      }
+    });
+  }
+
+  // 教育背景
+  if (resume.education) {
+    if (mainY > 250) {
+      doc.addPage();
+      doc.setFillColor(...hermes);
+      doc.rect(0, 0, 60, 297, 'F');
+      mainY = 20;
+    }
+
+    doc.setFontSize(14);
+    doc.setTextColor(...hermes);
+    doc.text('EDUCATION', 70, mainY);
+    mainY += 8;
+
+    doc.setFontSize(10);
+    doc.setTextColor(...darkGray);
+    const eduLines = doc.splitTextToSize(resume.education, 125);
+    doc.text(eduLines, 70, mainY);
+  }
+
+  // 頁尾
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(180, 180, 180);
+    doc.text('Generated by AI Job Agent', 105, 290, { align: 'center' });
+  }
 }
 
 </script>
